@@ -1,4 +1,4 @@
 # ignore everything in pycache directories
 *__pycache__
-# ignore local files and folders used for testing in the sourcecode directory
-sourcecode/test*
+# ignore local files and folders used for testing in the v0 directory
+v0/test*
