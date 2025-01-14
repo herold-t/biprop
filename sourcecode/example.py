@@ -6,6 +6,7 @@ Copyright (C) 2024  Talin Herold
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas
 import os
 import biprop as biprop
 import data_import
@@ -214,6 +215,9 @@ if __name__=='__main__':
     save_fig        = 'Plots/' # Indicates whether plots are saved. Use False to not save plots
                                # or a path to an existing directory (ending with '/' or '\\')
                                # to save figures in that directory.
+    save_excel      = 'apportionments.xlsx' # Whether to save the results in an Excel file. Has to be
+                            # False or a path to an Excel file (either existing one or one to
+                            # be created) to which sheets will be appended or replaced.
     
     filename = 'Election_Results\\results_lists.json'
     
@@ -307,6 +311,7 @@ if __name__=='__main__':
         if plot_dhont:
             distributions.extend([pwa_dhont])
             dist_names.extend(['WPBA-D\'Hont'])
+    all_party_names = party_names
     distributions, party_strength, party_names = biprop.reorder(
                 distributions, party_strength=party_strength,
                 party_names=party_names, party_order='size')
@@ -336,3 +341,21 @@ if __name__=='__main__':
             fig_name = save_fig+'_detail.png'
         plot_canton(distributions, dist_names, party_names, canton_names,
                     regions=plot_cantons, save_fig=fig_name)
+    
+    if save_excel:
+        print('Appending data to Excel file...')
+        if os.path.exists(save_excel):
+            mode = 'a'
+            if_exists = 'replace'
+        else:
+            mode = 'w'
+            if_exists = None
+        with pandas.ExcelWriter(save_excel, mode=mode, if_sheet_exists=if_exists) as writer:
+            df = pandas.DataFrame(votes, index=all_party_names, columns=canton_names, dtype=float)
+            df.to_excel(writer, sheet_name='Votes')
+            df = pandas.DataFrame(party_strength/2, index=party_names, columns=canton_names, dtype=float)
+            df.to_excel(writer, sheet_name='Relative party strength')
+            for dist, name in zip(distributions, dist_names):
+                df = pandas.DataFrame(dist, index=party_names, columns=canton_names, dtype=int)
+                df.to_excel(writer, sheet_name=name)
+        print('Done!')
