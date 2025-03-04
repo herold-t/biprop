@@ -46,7 +46,7 @@ We indeed arrive at the same seat distribution as the example in the Wikipedia a
 
 ## Examples and Tutorial
 
-You can find practical examples and detailed explanations in the tutorial iPython notebooks in the [Examples directory of the project's GitHub page](https://github.com/herold-t/biprop/tree/main/Examples).
+You can find practical examples and detailed explanations in the tutorial iPython notebooks in the [Examples directory of the project's GitHub page](https://github.com/herold-t/biprop/tree/main/Examples). The tutorials are still being worked on. Eventually, there will be more and more detailed tutorials. But for now there is only one describing the basic usage in a bit more detail than the section above.
 
 ## Version 0
 
