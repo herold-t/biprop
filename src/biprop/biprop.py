@@ -198,7 +198,7 @@ class Election():
     def region_names(self, new_region_names):
         new_region_names = list(new_region_names)
         if len(new_region_names) != self.votes.shape[1]:
-            raise ValueError(f'Cannot assign name list with {len(new_region_names)}regions to election with {self.votes.shape[1]} regions.')
+            raise ValueError(f'Cannot assign name list with {len(new_region_names)} regions to election with {self.votes.shape[1]} regions.')
         self._region_names = new_region_names
     @property
     def regions(self):
@@ -242,7 +242,7 @@ class Election():
                 raise ValueError(f'Expected `region_seats` to have size {self.NoR} but has size {new_region_seats.size}.')
             new_total = np.sum(new_region_seats)
             if type(self.party_seats) != type(None) and np.sum(self.party_seats)!=new_total:
-                raise ValueError(f'Cannot set `region_seats` ({new_total} total seats) as it conflicts with `party_seats` ({np.sum(self.region_seats)} total seats)\n'
+                raise ValueError(f'Cannot set `region_seats` ({new_total} total seats) as it conflicts with `party_seats` ({np.sum(self.party_seats)} total seats)\n'
                                  +'If you want to use `region_seats` instead of `party_seats`, set `party_seats` to `None` first.')
             if new_total != self.total_seats:
                 if self.total_seats != None:
@@ -634,6 +634,11 @@ class Election():
                     new_names[index] = merger[0]
             self._votes = new_votes
             self.party_names = new_names
+            if type(self.party_seats) != None:
+                new_seats = [0]*next_index
+                for index, seats in zip(new_indices, self.party_seats):
+                    new_seats[index] += seats
+                self.party_seats = new_seats
         
         # merge regions
         if region_mergers:
@@ -666,6 +671,11 @@ class Election():
                     new_names[index] = merger[0]
             self._votes = new_votes
             self.region_names = new_names
+            if type(self.region_seats) != None:
+                new_seats = [0]*next_index
+                for index, seats in zip(new_indices, self.region_seats):
+                    new_seats[index] += seats
+                self.region_seats = new_seats
     
 
     def merge_parties(self, mergers):

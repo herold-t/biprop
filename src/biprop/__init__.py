@@ -1,4 +1,3 @@
-# TODO: Finish doc
 """
 Biprop - A Python Library for Biproportional Apportionment
 ==========================================================
@@ -61,7 +60,7 @@ Additional examples can be found on the project's GitHub page
 
 """
 from .biprop import Election, Distribution, InvalidOrderError
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 # __all__ = ['biprop', 'Election', 'Distribution', 'InvalidOrderError']
 __author__      = 'Talin Herold'
 __description__ = 'Python library for biproportional and other apportionment methods.'
