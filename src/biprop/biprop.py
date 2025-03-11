@@ -634,7 +634,7 @@ class Election():
                     new_names[index] = merger[0]
             self._votes = new_votes
             self.party_names = new_names
-            if type(self.party_seats) != None:
+            if type(self.party_seats) != type(None):
                 new_seats = [0]*next_index
                 for index, seats in zip(new_indices, self.party_seats):
                     new_seats[index] += seats
@@ -671,7 +671,7 @@ class Election():
                     new_names[index] = merger[0]
             self._votes = new_votes
             self.region_names = new_names
-            if type(self.region_seats) != None:
+            if type(self.region_seats) != type(None):
                 new_seats = [0]*next_index
                 for index, seats in zip(new_indices, self.region_seats):
                     new_seats[index] += seats
@@ -2122,7 +2122,7 @@ class Distribution():
             for i in other[:-1]:
                 self.seats[:, other[-1]] += self.seats[:, i]
         if type(self.region_divisors)==np.ndarray:
-            self._region_divisors = self.region_divisors[new_order]
+            self._region_divisors = self.region_divisors[:, new_order]
         self._seats = self.seats[:, new_order]
     
     def to_dataframe(self):
