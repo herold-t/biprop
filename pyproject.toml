@@ -5,6 +5,14 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 path = 'src/biprop/__init__.py'
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "v0",
+  "Examples",
+  "tests"
+]
+include = []
+
 [project]
 name = "biprop"
 dynamic = ["version"]
