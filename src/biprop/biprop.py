@@ -140,7 +140,7 @@ class Election():
         self._region_names = None
         self._party_seats = None
         self._region_seats = None
-        self._total_votes = None
+        self._votes_offset = 0
         self._mode = 0
         
         # define votes
@@ -259,10 +259,7 @@ class Election():
         return self._distributions
     @property
     def total_votes(self):
-        if self._total_votes == None:
-            return self.votes.sum()
-        else:
-            return self._total_votes
+        return self.votes.sum() + self._votes_offset
     @property
     def shape(self):
         return self.votes.shape
@@ -862,6 +859,7 @@ class Election():
         irrelevant_parties = []
         if irr_parties:
             relevant_parties = []
+            old_total = self.total_votes
             for dist in self.distributions.values():
                 for n, party in enumerate(dist.seats):
                     if n not in relevant_parties and np.sum(party)!=0:
@@ -871,9 +869,7 @@ class Election():
                     if n not in relevant_parties and np.sum(party)!=0:
                         relevant_parties.append(n)
             relevant_parties.sort()
-            if (irr_parties == 'delete' and self.NoP > len(relevant_parties)
-                and self._total_votes == None): # save total votes if votes are deleted
-                self._total_votes = self.votes.sum()
+            if (irr_parties == 'delete' and self.NoP > len(relevant_parties)): # change mode if votes are deleted
                 self._mode = max(2, self.mode)
             if irr_parties == 'other':
                 irrelevant_parties = [i for i in range(NoP) if i not in relevant_parties]
@@ -881,7 +877,7 @@ class Election():
                 relevant_parties.append(irrelevant_parties[-1])
                 self._mode = max(2, self.mode)
             for dist in self.distributions.values():
-                dist.__reorder_parties__(relevant_parties, irrelevant_parties)
+                dist._reorder_parties(relevant_parties, irrelevant_parties)
             if type(self.seats) == np.ndarray:
                 if irrelevant_parties:
                     for i in irrelevant_parties[:-1]:
@@ -891,6 +887,7 @@ class Election():
                 for i in irrelevant_parties[:-1]:
                     self.votes[irrelevant_parties[-1]] += self.votes[i]
             self._votes = self.votes[relevant_parties]
+            self._votes_offset += old_total - self.total_votes
             if type(self.party_seats) != type(None):
                 if irrelevant_parties:
                     for i in irrelevant_parties[:-1]:
@@ -906,6 +903,7 @@ class Election():
         irrelevant_regions = []
         if irr_regions:
             relevant_regions = []
+            old_total = self.total_votes
             for dist in self.distributions.values():
                 for n, region in enumerate(dist.seats.T):
                     if n not in relevant_regions and np.sum(region)!=0:
@@ -915,9 +913,7 @@ class Election():
                     if n not in relevant_regions and np.sum(region)!=0:
                         relevant_regions.append(n)
             relevant_regions.sort()
-            if (irr_regions == 'delete' and self.NoR > len(relevant_regions)
-                and self._total_votes == None): # save total votes if votes are deleted
-                self._total_votes = self.votes.sum()
+            if (irr_regions == 'delete' and self.NoR > len(relevant_regions)): # change mode if votes are deleted
                 self._mode = max(2, self.mode)
             if irr_regions == 'other':
                 irrelevant_regions = [i for i in range(NoR) if i not in relevant_regions]
@@ -925,7 +921,7 @@ class Election():
                 relevant_regions.append(irrelevant_regions[-1])
                 self._mode = max(2, self.mode)
             for dist in self.distributions.values():
-                dist.__reorder_regions__(relevant_regions, irrelevant_regions)
+                dist._reorder_regions(relevant_regions, irrelevant_regions)
             if type(self.seats)==np.ndarray:
                 if irrelevant_regions:
                     for i in irrelevant_regions[:-1]:
@@ -935,6 +931,7 @@ class Election():
                 for i in irrelevant_regions[:-1]:
                     self.votes[:,irrelevant_regions[-1]] += self.votes[:,i]
             self._votes = self.votes[:, relevant_regions]
+            self._votes_offset += old_total - self.total_votes
             if type(self.region_seats) != type(None):
                 if irrelevant_regions:
                     for i in irrelevant_regions[:-1]:
@@ -971,19 +968,19 @@ class Election():
                             [str(name).lower() for name in self.party_names],
                             kind='stable')
         elif party_order:
-            sort_dict = {party: i for i, party in enumerate(party_order)}
+            sort_dict = {party: -i for i, party in enumerate(party_order[::-1])}
             def value(party):
                 if party in sort_dict:
                     return sort_dict[party]
                 else:
-                    return len(sort_dict)
+                    return 1
             sort_arr = np.array([value(party) for party in self.party_names])
             new_order = np.argsort(sort_arr, kind='stable')
         
         # reorder parties according to new_order
         if party_order:
             for dist in self.distributions.values():
-                dist.__reorder_parties__(new_order)
+                dist._reorder_parties(new_order)
             if type(self.seats)==np.ndarray:
                 self._seats = self.seats[new_order]
             self.votes = self.votes[new_order]
@@ -1017,21 +1014,21 @@ class Election():
                             [str(name).lower() for name in self.region_names],
                             kind='stable')
         elif region_order:
-            sort_dict = {region: i for i, region in enumerate(region_order)}
+            sort_dict = {region: -i for i, region in enumerate(region_order[::-1])}
             def value(region):
                 if region in sort_dict:
                     return sort_dict[region]
                 else:
-                    return len(sort_dict)
+                    return 1
             sort_arr = np.array([value(region) for region in self.region_names])
             new_order = np.argsort(sort_arr, kind='stable')
         
         # reorder regions accoring to new_order
         if region_order:
             for dist in self.distributions.values():
-                dist.__reorder_regions__(new_order)
+                dist._reorder_regions(new_order)
             if type(self.seats)==np.ndarray:
-                self._seats = self.seats[new_order]
+                self._seats = self.seats[:, new_order]
             self.votes = self.votes[:, new_order]
             if type(self.region_seats) != type(None):
                 self.region_seats = self.region_seats[new_order]
@@ -1058,7 +1055,7 @@ class Election():
             other_regions_name=other_regions_name, other_regions_at_end=other_regions_at_end)
     
 
-    def reorder_parties(self, irr_parties=None, parties_order=None,
+    def reorder_parties(self, irr_parties=None, party_order=None,
                         other_parties_name='other', other_parties_at_end=True):
         """
         This method can reorder the rows of `self.votes`, `self.party_names`,
@@ -1108,12 +1105,12 @@ class Election():
             Is raised when an invalid set of parameters is passed.
 
         """
-        self.reorder(irr_parties=irr_parties, party_order=parties_order,
+        self.reorder(irr_parties=irr_parties, party_order=party_order,
             other_parties_name=other_parties_name,
             other_parties_at_end=other_parties_at_end)
     
     
-    def sort_parties(self, irr_parties=None, parties_order=None,
+    def sort_parties(self, irr_parties=None, party_order=None,
                     other_parties_name='other', other_parties_at_end=True):
         """
         This method can reorder the rows of `self.votes`, `self.party_names`,
@@ -1124,7 +1121,7 @@ class Election():
         to `self.reorder_parties`.
 
         """
-        self.reorder_parties(irr_parties=irr_parties, parties_order=parties_order,
+        self.reorder_parties(irr_parties=irr_parties, parties_order=party_order,
             other_parties_name=other_parties_name, other_parties_at_end=other_parties_at_end)
     
 
@@ -1235,9 +1232,9 @@ class Election():
         raise NotImplementedError('Will become available in version 1.1.0')
 
 
-    def __get_row_divisors__(self, seats, row_divisors=None, column_divisors=None,
-                            rounding_method=np.round, max_depth=100, scaling=2,
-                            eps=1e-6):
+    def _get_row_divisors(self, seats, row_divisors=None, column_divisors=None,
+                          rounding_method=np.round, max_depth=100, scaling=2,
+                          eps=1e-6):
         """
         Finds and returns row divisors for a votes-array such that the total number
         of seats of the i'th row corresponds to the i'th item of `seats`.
@@ -1287,9 +1284,9 @@ class Election():
         return current_seats, row_divisors
 
 
-    def __get_column_divisors__(self, seats, row_divisors=None, column_divisors=None,
-                            rounding_method=np.round, max_depth=100, scaling=2,
-                            eps=1e-6):
+    def _get_column_divisors(self, seats, row_divisors=None, column_divisors=None,
+                             rounding_method=np.round, max_depth=100, scaling=2,
+                             eps=1e-6):
         """
         Finds and returns row divisors for a votes-array such that the total number
         of seats of the j'th column corresponds to the j'th item of `seats`.
@@ -1305,7 +1302,7 @@ class Election():
             column_divisors = column_divisors.T
         self._votes = self._votes.T
         try:
-            current_seats, row_divisors = self.__get_row_divisors__(
+            current_seats, row_divisors = self._get_row_divisors(
                 seats, column_divisors, row_divisors, new_rounding_method,
                 max_depth, scaling, eps)
         except:
@@ -1316,7 +1313,7 @@ class Election():
         return current_seats.T, row_divisors.T
     
 
-    def __lower_apportionment__(self, party_seats=None, region_seats=None,
+    def _lower_apportionment(self, party_seats=None, region_seats=None,
                 rounding_method=np.round, max_depth=100, scaling=2, eps=1e-6):
         """
         Calculates the lower apportionment and creates and returns a the apportioned
@@ -1377,7 +1374,7 @@ class Election():
                 iteration += 1
                 
                 # update region_divisors
-                seats, region_divisors = self.__get_column_divisors__(
+                seats, region_divisors = self._get_column_divisors(
                     region_seats, party_divisors, region_divisors,
                     rounding_method, max_depth, scaling, eps)
                 
@@ -1391,7 +1388,7 @@ class Election():
                     break
                 
                 # update party_divisors
-                seats, party_divisors = self.__get_row_divisors__(
+                seats, party_divisors = self._get_row_divisors(
                     party_seats, party_divisors, region_divisors,
                     rounding_method, max_depth, scaling, eps)
                 
@@ -1487,7 +1484,7 @@ class Election():
             returned if `return_distributions == True`.
         
         """
-        seats, pdiv, rdiv = self.__lower_apportionment__(party_seats=party_seats,
+        seats, pdiv, rdiv = self._lower_apportionment(party_seats=party_seats,
                                 region_seats=region_seats, rounding_method=rounding_method,
                                 max_depth=max_depth, scaling=scaling, eps=eps)
         self._seats = seats
@@ -1665,7 +1662,7 @@ class Election():
             region_rounding = 'Predefined Apportionment'
             urdiv = None
         
-        seats, pdiv, rdiv = self.__lower_apportionment__(party_seats=party_seats,
+        seats, pdiv, rdiv = self._lower_apportionment(party_seats=party_seats,
                                 region_seats=region_seats, rounding_method=rounding_method,
                                 max_depth=max_depth, scaling=scaling, eps=eps)
         self._seats = seats
@@ -2095,7 +2092,7 @@ class Distribution():
             s += '\n' + 7*' ' + line
         return s
 
-    def __reorder_parties__(self, new_order, other=[]):
+    def _reorder_parties(self, new_order, other=[]):
         """
         Reorders the rows of `self.seats` and `self.party_divisors` according to
         to `new_order`.
@@ -2110,7 +2107,7 @@ class Distribution():
             self._party_divisors = self.party_divisors[new_order]
         self._seats = self.seats[new_order]
     
-    def __reorder_regions__(self, new_order, other=[]):
+    def _reorder_regions(self, new_order, other=[]):
         """
         Reorders the columns of `self.seats` and `self.region_divisors` according to
         to `new_order`.
@@ -2164,21 +2161,3 @@ class DistDict(dict):
     @property
     def election(self):
         return self._election
-
-
-if __name__=='__main__':
-    votes = [[123,  45, 815],
-             [912, 714, 414],
-             [312, 255, 215],]
-    parties = ['A', 'B', 'C']
-    regions = ['I', 'II', 'III']
-    party_seats = [5, 11, 4]
-    region_seats = [7, 5, 8]
-    e = Election(votes, parties, regions, 20)
-    d = e.proportional_apportionment(20, which='both', return_distribution=True,
-        date='January 14.')
-
-
-    print('end')
-
-

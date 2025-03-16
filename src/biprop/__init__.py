@@ -60,8 +60,8 @@ Additional examples can be found on the project's GitHub page
 
 """
 from .biprop import Election, Distribution, InvalidOrderError
-__version__ = '1.0.3'
-# __all__ = ['biprop', 'Election', 'Distribution', 'InvalidOrderError']
+__version__     = '1.0.4'
+__all__         = ['biprop', 'Election', 'Distribution', 'InvalidOrderError']
 __author__      = 'Talin Herold'
 __description__ = 'Python library for biproportional and other apportionment methods.'
 __copyright__   = 'Copyright (C) 2025 Talin Herold'
