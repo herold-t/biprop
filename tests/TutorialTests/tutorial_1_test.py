@@ -37,9 +37,3 @@ if np.any(seats2 != [[1, 0, 4],
                      [4, 4, 3],
                      [2, 1, 1]]):
     raise ValueError(f'Calculated seats array does not match expected value.')
-
-
-if __name__=='__main__':
-
-
-    print('\nend')

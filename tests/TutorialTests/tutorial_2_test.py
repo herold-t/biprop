@@ -95,12 +95,3 @@ if e.parties != ['Sparrows', 'Waxwings', 'Owls', 'Sparrowhawks', 'Blackbirds', '
 e.reorder(region_order='alphabetical')
 if e.regions != ['Earth', 'Jupyter', 'Mars', 'Mercury', 'Neptune', 'Saturn', 'Uranus', 'Venus']:
     raise ValueError('Reordered regions are not in the expected order.')
-
-
-
-
-if __name__=='__main__':
-    
-
-
-    print('\nend')
